@@ -1,0 +1,30 @@
+<html>
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+</head>
+<body>
+    <script id="worker" type="javascript/worker">
+        console.log('baseUrl:', baseUrl);
+        importScripts(`${baseUrl}/pkg/kusa_monitor.js`);
+
+        async function run() {
+            await wasm_bindgen(`${baseUrl}/pkg/kusa_monitor_bg.wasm`);
+        }
+
+        run();
+    </script>
+
+    <script type=module>
+        const baseUrl = window.location.href.replace('/index.html', '');
+        // console.log('baseUrl:', baseUrl);
+        const content = `const baseUrl = "${baseUrl}";\n`
+            + document.querySelector('#worker').textContent;
+        const objectUrl = window.URL.createObjectURL(
+            new Blob([content], {type: 'text/javascript'}));
+
+        const worker = new Worker(objectUrl);
+
+        window.URL.revokeObjectURL(objectUrl);
+    </script>
+</body>
+</html>
