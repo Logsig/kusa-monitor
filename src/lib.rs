@@ -17,6 +17,8 @@ macro_rules! console_ln {
 fn is_worker() -> bool {
     // let opt = web_sys::window(); // Uncaught (in promise) ReferenceError: Window is not defined
 
+    // TODO in case of Node.js
+
     let obj = js_sys::global().unchecked_into::<web_sys::Window>();
     // console_ln!("obj: {:?}", obj);
 

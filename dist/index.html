@@ -10,7 +10,7 @@
     </div>
 
     <script id="worker" type="javascript/worker">
-        console.log('[worker] baseUrl:', baseUrl);
+        // console.log('[worker] baseUrl:', baseUrl);
         // console.log('[worker] typeof self.window:', typeof self.window); // `undefined`
 
         importScripts(`${baseUrl}/pkg/kusa_monitor.js`);
@@ -32,7 +32,7 @@
         // Execute `start()` in the worker thread
 
         const baseUrl = window.location.href.replace('/index.html', '');
-        console.log('[main] baseUrl:', baseUrl);
+        // console.log('[main] baseUrl:', baseUrl);
         // console.log('[main] typeof self.window:', typeof self.window); // `object`
 
         const content = `const baseUrl = "${baseUrl}";\n`

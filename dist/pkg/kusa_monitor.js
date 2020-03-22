@@ -191,3 +191,4 @@ async function init(input) {
 wasm_bindgen = Object.assign(init, __exports);
 
 })();
+self.wasm_bindgen = wasm_bindgen;
