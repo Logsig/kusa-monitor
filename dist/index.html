@@ -1,22 +1,40 @@
 <html>
 <head>
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+    <title>kusa-monitor</title>
 </head>
 <body>
+    <div>
+        <p>kusa-monitor v<span id="version">0.0.0</span></p>
+        <p><a href="https://github.com/Logsig/kusa-monitor">source code</a></p>
+    </div>
+
     <script id="worker" type="javascript/worker">
-        console.log('baseUrl:', baseUrl);
+        console.log('[worker] baseUrl:', baseUrl);
+        // console.log('[worker] typeof self.window:', typeof self.window); // `undefined`
+
         importScripts(`${baseUrl}/pkg/kusa_monitor.js`);
-
-        async function run() {
-            await wasm_bindgen(`${baseUrl}/pkg/kusa_monitor_bg.wasm`);
-        }
-
-        run();
+        (async () => await wasm_bindgen(`${baseUrl}/pkg/kusa_monitor_bg.wasm`))();
     </script>
 
     <script type=module>
+
+        // Execute `start()` in the main thread
+
+        const script = document.createElement('script');
+        script.onload = () => {
+            // console.log('wasm_bindgen:', wasm_bindgen);
+            (async () => await wasm_bindgen(`./pkg/kusa_monitor_bg.wasm`))();
+        };
+        script.src = './pkg/kusa_monitor.js';
+        document.head.appendChild(script);
+
+        // Execute `start()` in the worker thread
+
         const baseUrl = window.location.href.replace('/index.html', '');
-        // console.log('baseUrl:', baseUrl);
+        console.log('[main] baseUrl:', baseUrl);
+        // console.log('[main] typeof self.window:', typeof self.window); // `object`
+
         const content = `const baseUrl = "${baseUrl}";\n`
             + document.querySelector('#worker').textContent;
         const objectUrl = window.URL.createObjectURL(

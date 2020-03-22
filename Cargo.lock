@@ -25,6 +25,7 @@ dependencies = [
 name = "kusa-monitor"
 version = "0.0.0"
 dependencies = [
+ "js-sys",
  "wasm-bindgen",
  "web-sys",
 ]
