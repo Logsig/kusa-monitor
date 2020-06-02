@@ -9,40 +9,9 @@
         <p><a href="https://github.com/Logsig/kusa-monitor">source code</a></p>
     </div>
 
-    <script id="worker" type="javascript/worker">
-        // console.log('[worker] baseUrl:', baseUrl);
-        // console.log('[worker] typeof self.window:', typeof self.window); // `undefined`
-
-        importScripts(`${baseUrl}/pkg/kusa_monitor.js`);
-        (async () => await wasm_bindgen(`${baseUrl}/pkg/kusa_monitor_bg.wasm`))();
-    </script>
-
-    <script type=module>
-
-        // Execute `start()` in the main thread
-
-        const script = document.createElement('script');
-        script.onload = () => {
-            // console.log('wasm_bindgen:', wasm_bindgen);
-            (async () => await wasm_bindgen(`./pkg/kusa_monitor_bg.wasm`))();
-        };
-        script.src = './pkg/kusa_monitor.js';
-        document.head.appendChild(script);
-
-        // Execute `start()` in the worker thread
-
-        const baseUrl = window.location.href.replace('/index.html', '');
-        // console.log('[main] baseUrl:', baseUrl);
-        // console.log('[main] typeof self.window:', typeof self.window); // `object`
-
-        const content = `const baseUrl = "${baseUrl}";\n`
-            + document.querySelector('#worker').textContent;
-        const objectUrl = window.URL.createObjectURL(
-            new Blob([content], {type: 'text/javascript'}));
-
-        const worker = new Worker(objectUrl);
-
-        window.URL.revokeObjectURL(objectUrl);
+    <script type="module">
+        import startApp from './deps/start-app.js';
+        startApp('kusa_monitor');
     </script>
 </body>
 </html>
