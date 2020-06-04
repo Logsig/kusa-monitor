@@ -6,6 +6,8 @@ monitor:
 
 dist: monitor
 	rsync -az ./frontend/index.html ./dist/
+	rsync -az ./frontend/plotters ./dist/
+	rsync -az ./frontend/deps ./dist/
 	rsync -az ./pkg/kusa_monitor*.{js,wasm} ./dist/pkg/
 
 clean:

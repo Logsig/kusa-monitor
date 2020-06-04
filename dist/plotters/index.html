@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>plotters/index.html</title>
+        <link rel="stylesheet" href="./style.css">
+    </head>
+    <body>
+        <main>
+            <h1>plotters/index.html</h1>
+            <div id="coord"></div>
+            <canvas id="canvas" width="600" height="400"></canvas>
+            <div id="status">Loading WebAssembly...</div>
+            <div id="control">
+                <label for="plot-type">Demo: </label>
+                <select id="plot-type">
+                    <option value="0">Graph of y=1</option>
+                    <option value="1">Graph of y=x</option>
+                    <option value="2">Graph of y=x^2</option>
+                    <option value="3">Graph of y=x^3</option>
+                    <option value="4">Graph of y=x^4</option>
+                    <option value="5">Graph of y=x^5</option>
+                    <option value="mandelbrot">Mandelbrot Set</option>
+                </select>
+            </div>
+        </main>
+        <footer>
+            Thanks: this demo is based on <a href="https://github.com/38/plotters/blob/master/examples/wasm-demo" target="a">examples/wasm-demo</a>
+            of <a href="https://github.com/38/plotters" target="a">plotters</a>.
+        </footer>
+
+        <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+        <script type="module">
+            import startApp from '../deps/start-app.js';
+
+            const main = (Chart) => {
+                const canvas = document.getElementById("canvas");
+                const coord = document.getElementById("coord");
+                const plotType = document.getElementById("plot-type");
+                const status = document.getElementById("status");
+
+                let chart = null;
+
+                /** Add event listeners. */
+                function setupUI() {
+                    status.innerText = "WebAssembly loaded!";
+                    plotType.addEventListener("change", updatePlot);
+                    window.addEventListener("resize", setupCanvas);
+                    window.addEventListener("mousemove", onMouseMove);
+                }
+
+                /** Setup canvas to properly handle high DPI and redraw current plot. */
+                function setupCanvas() {
+                    const dpr = window.devicePixelRatio || 1;
+                    const aspectRatio = canvas.width / canvas.height;
+                    const size = Math.min(canvas.width, canvas.parentNode.offsetWidth);
+                    canvas.style.width = size + "px";
+                    canvas.style.height = size / aspectRatio + "px";
+                    canvas.width = size * dpr;
+                    canvas.height = size / aspectRatio * dpr;
+                    canvas.getContext("2d").scale(dpr, dpr);
+                    updatePlot();
+                }
+
+                /** Update displayed coordinates. */
+                function onMouseMove(event) {
+                    if (chart) {
+                        const point = chart.coord(event.offsetX, event.offsetY);
+                        coord.innerText = (point)
+                            ? `(${point.x.toFixed(3)}, ${point.y.toFixed(3)})`
+                            : "Mouse pointer is out of range";
+                    }
+                }
+
+                /** Redraw currently selected plot. */
+                function updatePlot() {
+                    const selected = plotType.selectedOptions[0];
+                    status.innerText = `Rendering ${selected.innerText}...`;
+                    chart = null;
+                    const start = performance.now();
+                    chart = (selected.value == "mandelbrot")
+                        ? Chart.mandelbrot(canvas)
+                        : Chart.power("canvas", Number(selected.value));
+                    const end = performance.now();
+                    status.innerText = `Rendered ${selected.innerText} in ${Math.ceil(end - start)}ms`;
+                }
+
+                setupUI();
+                setupCanvas();
+            };
+
+            (async () => {
+                const { Chart } = await startApp('kusa_monitor');
+                main(Chart);
+            })();
+        </script>
+    </body>
+</html>
