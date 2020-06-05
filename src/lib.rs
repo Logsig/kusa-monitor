@@ -100,6 +100,21 @@ impl Chart {
         })
     }
 
+    pub async fn mandelbrot_mt(canvas: HtmlCanvasElement) -> Result<Chart, JsValue> {
+        // TODO: use `th` in outer context
+        let mt = WasmMt::new("../pkg/kusa_monitor.js")
+            .and_init().await.unwrap();
+        let th = mt.thread().and_init().await.unwrap();
+
+        let _ = exec!(th, move || {
+            console_ln!("TODO mandelbrot_mt: plotting in thread...");
+            // Self::mandelbrot(canvas); // TODO: do this without `HtmlCanvasElement`
+            Ok(JsValue::NULL)
+        }).await;
+
+        Self::mandelbrot(canvas)
+    }
+
     /// This function can be used to convert screen coordinates to
     /// chart coordinates.
     pub fn coord(&self, x: i32, y: i32) -> Option<Point> {

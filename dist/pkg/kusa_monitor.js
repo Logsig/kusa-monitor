@@ -200,11 +200,11 @@ function makeMutClosure(arg0, arg1, dtor, f) {
     return real;
 }
 function __wbg_adapter_28(arg0, arg1, arg2) {
-    wasm._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__hd6d289d2f828c53f(arg0, arg1, addHeapObject(arg2));
+    wasm._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__hcfb324a6cbf310c6(arg0, arg1, addHeapObject(arg2));
 }
 
 function __wbg_adapter_31(arg0, arg1, arg2) {
-    wasm._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__hcfb324a6cbf310c6(arg0, arg1, addHeapObject(arg2));
+    wasm._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__hd6d289d2f828c53f(arg0, arg1, addHeapObject(arg2));
 }
 
 /**
@@ -249,7 +249,7 @@ function passArray8ToWasm0(arg, malloc) {
     WASM_VECTOR_LEN = arg.length;
     return ptr;
 }
-function __wbg_adapter_177(arg0, arg1, arg2, arg3) {
+function __wbg_adapter_180(arg0, arg1, arg2, arg3) {
     wasm.wasm_bindgen__convert__closures__invoke2_mut__hf5570b521f3dd02a(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
 }
 
@@ -294,6 +294,14 @@ class Chart {
     static mandelbrot(canvas) {
         var ret = wasm.chart_mandelbrot(addHeapObject(canvas));
         return Chart.__wrap(ret);
+    }
+    /**
+    * @param {HTMLCanvasElement} canvas
+    * @returns {any}
+    */
+    static mandelbrot_mt(canvas) {
+        var ret = wasm.chart_mandelbrot_mt(addHeapObject(canvas));
+        return takeObject(ret);
     }
     /**
     * This function can be used to convert screen coordinates to
@@ -422,6 +430,10 @@ async function init(input) {
     imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
         takeObject(arg0);
     };
+    imports.wbg.__wbindgen_string_new = function(arg0, arg1) {
+        var ret = getStringFromWasm0(arg0, arg1);
+        return addHeapObject(ret);
+    };
     imports.wbg.__wbindgen_cb_drop = function(arg0) {
         const obj = takeObject(arg0).original;
         if (obj.cnt-- == 1) {
@@ -431,8 +443,8 @@ async function init(input) {
         var ret = false;
         return ret;
     };
-    imports.wbg.__wbindgen_string_new = function(arg0, arg1) {
-        var ret = getStringFromWasm0(arg0, arg1);
+    imports.wbg.__wbg_chart_new = function(arg0) {
+        var ret = Chart.__wrap(arg0);
         return addHeapObject(ret);
     };
     imports.wbg.__wbindgen_is_undefined = function(arg0) {
@@ -709,7 +721,7 @@ async function init(input) {
                 const a = state0.a;
                 state0.a = 0;
                 try {
-                    return __wbg_adapter_177(a, state0.b, arg0, arg1);
+                    return __wbg_adapter_180(a, state0.b, arg0, arg1);
                 } finally {
                     state0.a = a;
                 }
@@ -805,12 +817,12 @@ async function init(input) {
         var ret = wasm.memory;
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper720 = function(arg0, arg1, arg2) {
-        var ret = makeMutClosure(arg0, arg1, 412, __wbg_adapter_31);
+    imports.wbg.__wbindgen_closure_wrapper795 = function(arg0, arg1, arg2) {
+        var ret = makeMutClosure(arg0, arg1, 477, __wbg_adapter_28);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper1270 = function(arg0, arg1, arg2) {
-        var ret = makeMutClosure(arg0, arg1, 471, __wbg_adapter_28);
+    imports.wbg.__wbindgen_closure_wrapper1345 = function(arg0, arg1, arg2) {
+        var ret = makeMutClosure(arg0, arg1, 536, __wbg_adapter_31);
         return addHeapObject(ret);
     };
 

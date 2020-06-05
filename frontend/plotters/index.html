@@ -22,6 +22,7 @@
                     <option value="4">Graph of y=x^4</option>
                     <option value="5">Graph of y=x^5</option>
                     <option value="mandelbrot">Mandelbrot Set</option>
+                    <option value="mandelbrot_mt">Mandelbrot Set Multithread</option>
                 </select>
             </div>
         </main>
@@ -45,14 +46,21 @@
                 canvas.height = size / aspectRatio * dpr;
                 canvas.getContext("2d").scale(dpr, dpr);
             };
-            const updatePlot = (Chart, canvas, plotType, status) => {
+            const updatePlot = async (wbg, canvas, plotType, status) => {
+                const { Chart } = wbg;
+
                 const selected = plotType.selectedOptions[0];
                 status.innerText = `Rendering ${selected.innerText}...`;
 
                 const start = performance.now();
-                const chart = selected.value == "mandelbrot" ?
-                    Chart.mandelbrot(canvas) :
-                    Chart.power("canvas", Number(selected.value));
+
+                let chart = null;
+                switch (selected.value) {
+                    case "mandelbrot": chart = Chart.mandelbrot(canvas); break;
+                    case "mandelbrot_mt": chart = await Chart.mandelbrot_mt(canvas); break;
+                    default: chart = Chart.power("canvas", Number(selected.value));
+                }
+
                 const end = performance.now();
                 status.innerText = `Rendered ${selected.innerText} in ${Math.ceil(end - start)}ms`;
 
@@ -60,7 +68,7 @@
             };
 
             (async () => {
-                const { Chart } = await startApp('kusa_monitor', '../pkg');
+                const wbg = await startApp('kusa_monitor', '../pkg');
 
                 const canvas = document.getElementById("canvas");
                 const plotType = document.getElementById("plot-type");
@@ -69,12 +77,12 @@
                 let chart = null;
 
                 status.innerText = "WebAssembly loaded!";
-                plotType.addEventListener("change", () => {
-                    chart = updatePlot(Chart, canvas, plotType, status);
+                plotType.addEventListener("change", async () => {
+                    chart = await updatePlot(wbg, canvas, plotType, status);
                 });
-                window.addEventListener("resize", () => {
+                window.addEventListener("resize", async () => {
                     setupCanvas(canvas);
-                    chart = updatePlot(Chart, canvas, plotType, status);
+                    chart = await updatePlot(wbg, canvas, plotType, status);
                 });
                 window.addEventListener("mousemove", (event) => {
                     if (!chart) return;
@@ -86,7 +94,7 @@
                 });
 
                 setupCanvas(canvas);
-                chart = updatePlot(Chart, canvas, plotType, status);
+                chart = await updatePlot(wbg, canvas, plotType, status);
             })();
         </script>
     </body>
