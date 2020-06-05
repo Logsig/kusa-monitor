@@ -31,68 +31,62 @@
         </footer>
 
         <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+
         <script type="module">
             import startApp from '../deps/start-app.js';
 
-            const main = (Chart) => {
-                const canvas = document.getElementById("canvas");
-                const coord = document.getElementById("coord");
-                const plotType = document.getElementById("plot-type");
-                const status = document.getElementById("status");
+            const setupCanvas = (canvas) => {
+                const dpr = window.devicePixelRatio || 1;
+                const aspectRatio = canvas.width / canvas.height;
+                const size = Math.min(canvas.width, canvas.parentNode.offsetWidth);
+                canvas.style.width = size + "px";
+                canvas.style.height = size / aspectRatio + "px";
+                canvas.width = size * dpr;
+                canvas.height = size / aspectRatio * dpr;
+                canvas.getContext("2d").scale(dpr, dpr);
+            };
+            const updatePlot = (Chart, canvas, plotType, status) => {
+                const selected = plotType.selectedOptions[0];
+                status.innerText = `Rendering ${selected.innerText}...`;
 
-                let chart = null;
+                const start = performance.now();
+                const chart = selected.value == "mandelbrot" ?
+                    Chart.mandelbrot(canvas) :
+                    Chart.power("canvas", Number(selected.value));
+                const end = performance.now();
+                status.innerText = `Rendered ${selected.innerText} in ${Math.ceil(end - start)}ms`;
 
-                /** Add event listeners. */
-                function setupUI() {
-                    status.innerText = "WebAssembly loaded!";
-                    plotType.addEventListener("change", updatePlot);
-                    window.addEventListener("resize", setupCanvas);
-                    window.addEventListener("mousemove", onMouseMove);
-                }
-
-                /** Setup canvas to properly handle high DPI and redraw current plot. */
-                function setupCanvas() {
-                    const dpr = window.devicePixelRatio || 1;
-                    const aspectRatio = canvas.width / canvas.height;
-                    const size = Math.min(canvas.width, canvas.parentNode.offsetWidth);
-                    canvas.style.width = size + "px";
-                    canvas.style.height = size / aspectRatio + "px";
-                    canvas.width = size * dpr;
-                    canvas.height = size / aspectRatio * dpr;
-                    canvas.getContext("2d").scale(dpr, dpr);
-                    updatePlot();
-                }
-
-                /** Update displayed coordinates. */
-                function onMouseMove(event) {
-                    if (chart) {
-                        const point = chart.coord(event.offsetX, event.offsetY);
-                        coord.innerText = (point)
-                            ? `(${point.x.toFixed(3)}, ${point.y.toFixed(3)})`
-                            : "Mouse pointer is out of range";
-                    }
-                }
-
-                /** Redraw currently selected plot. */
-                function updatePlot() {
-                    const selected = plotType.selectedOptions[0];
-                    status.innerText = `Rendering ${selected.innerText}...`;
-                    chart = null;
-                    const start = performance.now();
-                    chart = (selected.value == "mandelbrot")
-                        ? Chart.mandelbrot(canvas)
-                        : Chart.power("canvas", Number(selected.value));
-                    const end = performance.now();
-                    status.innerText = `Rendered ${selected.innerText} in ${Math.ceil(end - start)}ms`;
-                }
-
-                setupUI();
-                setupCanvas();
+                return chart;
             };
 
             (async () => {
                 const { Chart } = await startApp('kusa_monitor', '../pkg');
-                main(Chart);
+
+                const canvas = document.getElementById("canvas");
+                const plotType = document.getElementById("plot-type");
+                const status = document.getElementById("status");
+                const coord = document.getElementById("coord");
+                let chart = null;
+
+                status.innerText = "WebAssembly loaded!";
+                plotType.addEventListener("change", () => {
+                    chart = updatePlot(Chart, canvas, plotType, status);
+                });
+                window.addEventListener("resize", () => {
+                    setupCanvas(canvas);
+                    chart = updatePlot(Chart, canvas, plotType, status);
+                });
+                window.addEventListener("mousemove", (event) => {
+                    if (!chart) return;
+
+                    const point = chart.coord(event.offsetX, event.offsetY);
+                    coord.innerText = point ?
+                        `(${point.x.toFixed(3)}, ${point.y.toFixed(3)})` :
+                        "Mouse pointer is out of range";
+                });
+
+                setupCanvas(canvas);
+                chart = updatePlot(Chart, canvas, plotType, status);
             })();
         </script>
     </body>

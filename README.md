@@ -6,6 +6,6 @@ Build:
 $ make
 ```
 
-Live preview: [online demo][live]
+Live preview: [here][live]
 
 [live]: https://logsig.github.io/kusa-monitor/dist/index.html
