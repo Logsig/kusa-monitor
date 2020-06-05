@@ -10,5 +10,8 @@ dist: monitor
 	rsync -az ./frontend/deps ./dist/
 	rsync -az ./pkg/kusa_monitor*.{js,wasm} ./dist/pkg/
 
+test-jekyll:
+	bundle exec jekyll serve
+
 clean:
 	rm -rf ./frontend/pkg/* ./dist/*

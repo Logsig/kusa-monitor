@@ -9,13 +9,13 @@ use wasm_mt::prelude::*;
 use wasm_mt::utils::{console_ln, sleep};
 
 #[wasm_bindgen]
-pub fn app() {
+pub fn app(pkg_dir: String) {
     spawn_local(async move {
         let _ = entry_main().await;
     });
 
     spawn_local(async move {
-        let mt = WasmMt::new("./pkg/kusa_monitor.js")
+        let mt = WasmMt::new(&format!("{}/kusa_monitor.js", pkg_dir))
             .and_init().await.unwrap();
         let th = mt.thread().and_init().await.unwrap();
 

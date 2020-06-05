@@ -208,9 +208,12 @@ function __wbg_adapter_31(arg0, arg1, arg2) {
 }
 
 /**
+* @param {string} pkg_dir
 */
-__exports.app = function() {
-    wasm.app();
+__exports.app = function(pkg_dir) {
+    var ptr0 = passStringToWasm0(pkg_dir, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.app(ptr0, len0);
 };
 
 /**
