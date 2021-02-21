@@ -27,4 +27,4 @@ serve:
 	bundle exec jekyll serve
 
 clean:
-	rm -rf ./frontend/pkg/* ./dist/*
+	rm -rf ./dist/*
