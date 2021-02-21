@@ -4,26 +4,30 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlCanvasElement;
-use js_sys::Reflect;
+use js_sys::{Object, Reflect};
 use wasm_mt::prelude::*;
 use wasm_mt::utils::{console_ln, sleep};
 
 #[wasm_bindgen]
-pub fn app(pkg_dir: String) {
+// pub fn app(pkg_dir: String) {
+pub fn app(ffi: Object) -> Result<(), JsValue> {
     spawn_local(async move {
         let _ = entry_main().await;
     });
 
     spawn_local(async move {
-        let mt = WasmMt::new(&format!("{}/kusa_monitor.js", pkg_dir))
-            .and_init().await.unwrap();
-        let th = mt.thread().and_init().await.unwrap();
-
-        let _ = exec!(th, async move || {
-            let _ = entry_worker().await;
-            Ok(JsValue::NULL)
-        }).await;
+        // TODO !!
+        // let mt = WasmMt::new(&format!("{}/kusa_monitor.js", pkg_dir))
+        //     .and_init().await.unwrap();
+        // let th = mt.thread().and_init().await.unwrap();
+        //
+        // let _ = exec!(th, async move || {
+        //     let _ = entry_worker().await;
+        //     Ok(JsValue::NULL)
+        // }).await;
     });
+
+    Ok(())
 }
 
 async fn entry_main() {
@@ -101,16 +105,17 @@ impl Chart {
     }
 
     pub async fn mandelbrot_mt(canvas: HtmlCanvasElement) -> Result<Chart, JsValue> {
-        // TODO: use `th` in outer context
-        let mt = WasmMt::new("../pkg/kusa_monitor.js")
-            .and_init().await.unwrap();
-        let th = mt.thread().and_init().await.unwrap();
-
-        let _ = exec!(th, move || {
-            console_ln!("TODO mandelbrot_mt: plotting in thread...");
-            // Self::mandelbrot(canvas); // TODO: do this without `HtmlCanvasElement`
-            Ok(JsValue::NULL)
-        }).await;
+        // TODO !!
+        // // TODO: use `th` in outer context
+        // let mt = WasmMt::new("../pkg/kusa_monitor.js")
+        //     .and_init().await.unwrap();
+        // let th = mt.thread().and_init().await.unwrap();
+        //
+        // let _ = exec!(th, move || {
+        //     console_ln!("TODO mandelbrot_mt: plotting in thread...");
+        //     // Self::mandelbrot(canvas); // TODO: do this without `HtmlCanvasElement`
+        //     Ok(JsValue::NULL)
+        // }).await;
 
         Self::mandelbrot(canvas)
     }

@@ -1,0 +1,16 @@
+{
+    "private": true,
+    "name": "app",
+    "version": "0.0.0",
+    "description": "",
+    "scripts": {
+        "dev": "make dev",
+        "tts": "make tts",
+        "dist": "make dist"
+    },
+    "author": "The Kusa Developers",
+    "license": "MIT",
+    "devDependencies": {
+        "es-pack-js": "0.5.0"
+    }
+}

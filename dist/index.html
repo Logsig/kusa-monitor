@@ -13,8 +13,12 @@
     </div>
 
     <script type="module">
-        import startApp from './deps/start-app.js';
-        startApp('kusa_monitor');
+        //import Mod from '../pkg-es-pack/app.esm.dev.js';
+        import Mod from './build/app.esm.js';
+
+        Mod.create()
+            .then(mod => mod.app(Mod.ffi))
+            .catch(err => console.error(err));
     </script>
 </body>
 </html>

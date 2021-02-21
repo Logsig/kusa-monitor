@@ -34,7 +34,7 @@
         <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
 
         <script type="module">
-            import startApp from '../deps/start-app.js';
+            import Mod from '../build/app.esm.js';
 
             const setupCanvas = (canvas) => {
                 const dpr = window.devicePixelRatio || 1;
@@ -68,7 +68,7 @@
             };
 
             (async () => {
-                const wbg = await startApp('kusa_monitor', '../pkg');
+                const wbg = await Mod.create();
 
                 const canvas = document.getElementById("canvas");
                 const plotType = document.getElementById("plot-type");

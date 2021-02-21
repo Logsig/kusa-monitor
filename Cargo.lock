@@ -7,6 +7,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d2e7343e7fc9de883d1b0341e0b13970f764c14101234857d2ddafa1cb1cac2"
 
 [[package]]
+name = "app"
+version = "0.0.0"
+dependencies = [
+ "js-sys",
+ "plotters",
+ "serde",
+ "serde_closure",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-mt",
+ "web-sys",
+ "wee_alloc",
+]
+
+[[package]]
 name = "approx"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -432,21 +447,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce10c23ad2ea25ceca0093bd3192229da4c5b3c0f2de499c1ecac0d98d452177"
 dependencies = [
  "wasm-bindgen",
-]
-
-[[package]]
-name = "kusa-monitor"
-version = "0.0.0"
-dependencies = [
- "js-sys",
- "plotters",
- "serde",
- "serde_closure",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "wasm-mt",
- "web-sys",
- "wee_alloc",
 ]
 
 [[package]]

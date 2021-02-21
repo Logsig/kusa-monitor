@@ -1,0 +1,4 @@
+# Let jekyll exclude these from the generated '_site' dir
+exclude:
+    - 'node_modules'
+    - 'target'
