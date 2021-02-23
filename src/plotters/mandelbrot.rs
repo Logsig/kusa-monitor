@@ -6,6 +6,7 @@ use web_sys::HtmlCanvasElement;
 /// Draw Mandelbrot set
 pub fn draw(element: HtmlCanvasElement)
 -> DrawResult<impl Fn((i32, i32)) -> Option<(f64, f64)>> {
+    //======== !! refactor
     let backend = CanvasBackend::with_canvas_object(element).unwrap();
 
     let root = backend.into_drawing_area();
@@ -24,6 +25,7 @@ pub fn draw(element: HtmlCanvasElement)
         .draw()?;
 
     let plotting_area = chart.plotting_area();
+    //========
 
     let range = plotting_area.get_pixel_range();
     let (pw, ph) = (range.0.end - range.0.start, range.1.end - range.1.start);
@@ -41,7 +43,44 @@ pub fn draw(element: HtmlCanvasElement)
     return Ok(Box::new(chart.into_coord_trans()));
 }
 
-fn mandelbrot_set(
+pub fn draw_set(element: HtmlCanvasElement, set: impl Iterator<Item = (f64, f64, usize)>)
+-> Result<(), Box<dyn std::error::Error>> {
+    //======== !! refactor
+    let backend = CanvasBackend::with_canvas_object(element).unwrap();
+
+    let root = backend.into_drawing_area();
+    root.fill(&WHITE)?;
+
+    let mut chart = ChartBuilder::on(&root)
+        .margin(20)
+        .x_label_area_size(10)
+        .y_label_area_size(10)
+        .build_ranged(-2.1..0.6, -1.2..1.2)?;
+
+    chart
+        .configure_mesh()
+        .disable_x_mesh()
+        .disable_y_mesh()
+        .draw()?;
+
+    let plotting_area = chart.plotting_area();
+    //========
+
+    for (x, y, c) in set {
+        if c != 100 {
+            plotting_area.draw_pixel((x, y), &HSLColor(c as f64 / 100.0, 1.0, 0.5))?;
+        } else {
+            plotting_area.draw_pixel((x, y), &BLACK)?;
+        }
+    }
+
+    root.present().unwrap();
+    Ok(())
+}
+
+// fn mandelbrot_set(
+//==== @@
+pub fn mandelbrot_set(
     real: Range<f64>,
     complex: Range<f64>,
     samples: (usize, usize),

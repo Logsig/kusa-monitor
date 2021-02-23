@@ -1,30 +1,30 @@
 #![feature(async_closure)]
 
+mod utils;
+use crate::utils::create_mt;
+
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlCanvasElement;
 use js_sys::{Object, Reflect};
 use wasm_mt::prelude::*;
-use wasm_mt::utils::{console_ln, sleep};
+use wasm_mt::utils::{console_ln, Counter, sleep};
 
 #[wasm_bindgen]
-// pub fn app(pkg_dir: String) {
-pub fn app(ffi: Object) -> Result<(), JsValue> {
+pub fn app(clazz: Object) -> Result<(), JsValue> {
     spawn_local(async move {
         let _ = entry_main().await;
     });
 
+    let mt = create_mt(&clazz);
     spawn_local(async move {
-        // TODO !!
-        // let mt = WasmMt::new(&format!("{}/kusa_monitor.js", pkg_dir))
-        //     .and_init().await.unwrap();
-        // let th = mt.thread().and_init().await.unwrap();
-        //
-        // let _ = exec!(th, async move || {
-        //     let _ = entry_worker().await;
-        //     Ok(JsValue::NULL)
-        // }).await;
+        let th = mt.thread().and_init().await.unwrap();
+
+        let _ = exec!(th, async move || {
+            let _ = entry_worker().await;
+            Ok(JsValue::NULL)
+        }).await;
     });
 
     Ok(())
@@ -33,17 +33,19 @@ pub fn app(ffi: Object) -> Result<(), JsValue> {
 async fn entry_main() {
     assert!(!is_worker());
 
-    console_ln!("main: hi0");
+    console_ln!("main: start");
     sleep(1000).await;
-    console_ln!("main: hi1");
+    console_ln!("main: end");
 }
 
 async fn entry_worker() {
     assert!(is_worker());
 
+    let counter = Counter::new();
     #[allow(warnings)] loop {
-        console_ln!("worker: looping");
-        sleep(2000).await;
+        let ms = 2000;
+        console_ln!("worker: looping (every {}ms): {}", ms, counter.inc());
+        sleep(ms).await;
     }
 }
 
@@ -58,6 +60,48 @@ fn is_worker() -> bool {
     Reflect::get(&obj, &JsValue::from("window"))
         .unwrap_throw()
         .is_undefined()
+}
+
+//=========== Prototype `PlotThread`
+#[wasm_bindgen]
+pub struct PlotThread {
+    th: wasm_mt::Thread,
+}
+
+#[wasm_bindgen]
+impl PlotThread {
+    #[wasm_bindgen(constructor)]
+    pub fn new(clazz: &Object) -> Self {
+        console_ln!("PlotThread::new(): hi");
+        Self { th: create_mt(clazz).thread() }
+    }
+
+    pub async fn and_init(self) -> Self {
+        self.th.init().await.unwrap();
+        self
+    }
+
+    // FIXME * -- https://github.com/rustwasm/wasm-bindgen/issues/1858#issuecomment-552108855
+    //   pub async fn mandelbrot(&self) { ... }
+    pub async fn mandelbrot(self, canvas: HtmlCanvasElement) -> Self {
+
+        // TODO move and call this inside the thread below
+        let set = mandelbrot::mandelbrot_set( // dummy params for now
+            std::ops::Range { start: 0.0, end: 0.0 },
+            std::ops::Range { start: 0.0, end: 0.0 },
+            (0, 0), 100);
+
+        // TODO `_set` will be a pixel array
+        let _set = exec!(self.th, move || {
+            console_ln!("todo: call `mandelbrot_set()` here!!");
+
+            Ok(JsValue::NULL)
+        }).await;
+
+        mandelbrot::draw_set(canvas, set).map_err(|err| err.to_string()).unwrap();
+
+        self // FIXME *
+    }
 }
 
 //=========== plotters stuff
@@ -102,22 +146,6 @@ impl Chart {
         Ok(Chart {
             convert: Box::new(map_coord),
         })
-    }
-
-    pub async fn mandelbrot_mt(canvas: HtmlCanvasElement) -> Result<Chart, JsValue> {
-        // TODO !!
-        // // TODO: use `th` in outer context
-        // let mt = WasmMt::new("../pkg/kusa_monitor.js")
-        //     .and_init().await.unwrap();
-        // let th = mt.thread().and_init().await.unwrap();
-        //
-        // let _ = exec!(th, move || {
-        //     console_ln!("TODO mandelbrot_mt: plotting in thread...");
-        //     // Self::mandelbrot(canvas); // TODO: do this without `HtmlCanvasElement`
-        //     Ok(JsValue::NULL)
-        // }).await;
-
-        Self::mandelbrot(canvas)
     }
 
     /// This function can be used to convert screen coordinates to

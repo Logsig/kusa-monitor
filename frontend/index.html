@@ -17,7 +17,7 @@
         import Mod from './build/app.esm.js';
 
         Mod.create()
-            .then(mod => mod.app(Mod.ffi))
+            .then(mod => mod.app(Mod))
             .catch(err => console.error(err));
     </script>
 </body>

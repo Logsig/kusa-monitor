@@ -27,4 +27,4 @@ serve:
 	bundle exec jekyll serve
 
 clean:
-	rm -rf ./dist/*
+	rm -rf ./dist/* _site

@@ -46,6 +46,8 @@
                 canvas.height = size / aspectRatio * dpr;
                 canvas.getContext("2d").scale(dpr, dpr);
             };
+
+            let _thread = null;
             const updatePlot = async (wbg, canvas, plotType, status) => {
                 const { Chart } = wbg;
 
@@ -56,8 +58,14 @@
 
                 let chart = null;
                 switch (selected.value) {
-                    case "mandelbrot": chart = Chart.mandelbrot(canvas); break;
-                    case "mandelbrot_mt": chart = await Chart.mandelbrot_mt(canvas); break;
+                    case "mandelbrot": {
+                        chart = Chart.mandelbrot(canvas);
+                        break;
+                    }
+                    case "mandelbrot_mt": {
+                        _thread = await _thread.mandelbrot(canvas);
+                        break;
+                    }
                     default: chart = Chart.power("canvas", Number(selected.value));
                 }
 
@@ -69,6 +77,8 @@
 
             (async () => {
                 const wbg = await Mod.create();
+
+                _thread = await (new wbg.PlotThread(Mod)).and_init();
 
                 const canvas = document.getElementById("canvas");
                 const plotType = document.getElementById("plot-type");
