@@ -78,8 +78,6 @@ pub fn draw_set(element: HtmlCanvasElement, set: impl Iterator<Item = (f64, f64,
     Ok(())
 }
 
-// fn mandelbrot_set(
-//==== @@
 pub fn mandelbrot_set(
     real: Range<f64>,
     complex: Range<f64>,
