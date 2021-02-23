@@ -15,7 +15,8 @@ js-sys = "0.3"
 plotters = "0.2"
 wee_alloc = "0.4"
 
-wasm-mt = "0.1"
+##wasm-mt = "0.1"
+wasm-mt = { path = '../wasm-mt' }
 serde = { version = "1.0", features = ["derive"] }
 serde_closure = "0.2"
 
