@@ -9,10 +9,8 @@ use js_sys::Object;
 use wasm_mt::prelude::*;
 use wasm_mt::utils::{console_ln, Counter, sleep};
 
-mod chart;
-use chart::DrawResult;
-
 mod plotters;
+use crate::plotters::DrawResult;
 
 mod plot_thread;
 
