@@ -2,8 +2,9 @@ use crate::plotters::mandelbrot;
 use crate::utils::create_mt;
 
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
 use web_sys::HtmlCanvasElement;
-use js_sys::Object;
+use js_sys::{ArrayBuffer, Float64Array, Uint32Array, Object};
 use wasm_mt::prelude::*;
 use wasm_mt::utils::console_ln;
 
@@ -28,20 +29,37 @@ impl PlotThread {
     // FIXME * -- https://github.com/rustwasm/wasm-bindgen/issues/1858#issuecomment-552108855
     //   pub async fn mandelbrot(&self) { ... }
     pub async fn mandelbrot(self, canvas: HtmlCanvasElement) -> Self {
+        let jsv = exec!(self.th, move || {
+            let arr = mandelbrot::mandelbrot_arr_ab(
+                // FIXME hardcoded !!!!
+                std::ops::Range { start: -2.1, end: 0.6 },
+                std::ops::Range { start: -1.2, end: 1.2 },
+                (512, 324), 100);
 
-        // TODO move and call this inside the thread below
-        let set = mandelbrot::mandelbrot_set( // dummy params for now
-            std::ops::Range { start: 0.0, end: 0.0 },
-            std::ops::Range { start: 0.0, end: 0.0 },
-            (0, 0), 100);
+            // TODO transferables !!!!!!!!
+            Ok(JsValue::from(arr))
+        }).await.unwrap();
 
-        // TODO `_set` will be a pixel array
-        let _set = exec!(self.th, move || {
-            console_ln!("todo: call `mandelbrot_set()` here!!");
+        let arr = jsv.dyn_ref::<js_sys::Array>().unwrap();
+        let ab_x = arr.get(0).dyn_into::<ArrayBuffer>().unwrap();
+        let ab_y = arr.get(1).dyn_into::<ArrayBuffer>().unwrap();
+        let ab_c = arr.get(2).dyn_into::<ArrayBuffer>().unwrap();
 
-            Ok(JsValue::NULL)
-        }).await;
+        //==== ok
+        // let vec_x = Float64Array::new(&ab_x).to_vec(); // copied
+        // console_ln!("vec_x: {:?}", vec_x);
+        //==== ok
+        // let arr_x = Float64Array::new(&ab_x);
+        // arr_x.for_each(&mut |x, _idx, _arr| console_ln!("x: {}", x));
 
+        let arr_x = Float64Array::new(&ab_x);
+        let arr_y = Float64Array::new(&ab_y);
+        let arr_c = Uint32Array::new(&ab_c);
+        let set = (0..arr_x.length()).map(|idx| (
+            arr_x.get_index(idx),
+            arr_y.get_index(idx),
+            arr_c.get_index(idx) as usize,
+        ));
         mandelbrot::draw_set(canvas, set).map_err(|err| err.to_string()).unwrap();
 
         self // FIXME *

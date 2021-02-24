@@ -1,7 +1,10 @@
 use crate::DrawResult;
 use plotters::prelude::*;
 use std::ops::Range;
+use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
+use js_sys::{Float64Array, Uint32Array};
+// use wasm_mt::utils::console_ln;
 
 /// Draw Mandelbrot set
 pub fn draw(element: HtmlCanvasElement)
@@ -30,6 +33,8 @@ pub fn draw(element: HtmlCanvasElement)
     let range = plotting_area.get_pixel_range();
     let (pw, ph) = (range.0.end - range.0.start, range.1.end - range.1.start);
     let (xr, yr) = (chart.x_range(), chart.y_range());
+    // console_ln!("pw, ph, xr, yr: {:?} {:?} {} {}", xr, yr, pw as usize, ph as usize);
+    // pw, ph, xr, yr: -2.1..0.6 -1.2..1.2 512 324
 
     for (x, y, c) in mandelbrot_set(xr, yr, (pw as usize, ph as usize), 100) {
         if c != 100 {
@@ -40,7 +45,7 @@ pub fn draw(element: HtmlCanvasElement)
     }
 
     root.present()?;
-    return Ok(Box::new(chart.into_coord_trans()));
+    Ok(Box::new(chart.into_coord_trans()))
 }
 
 pub fn draw_set(element: HtmlCanvasElement, set: impl Iterator<Item = (f64, f64, usize)>)
@@ -78,7 +83,34 @@ pub fn draw_set(element: HtmlCanvasElement, set: impl Iterator<Item = (f64, f64,
     Ok(())
 }
 
-pub fn mandelbrot_set(
+pub fn mandelbrot_arr_ab(
+    real: Range<f64>,
+    complex: Range<f64>,
+    samples: (usize, usize),
+    max_iter: usize,
+) -> js_sys::Array {
+    let arr_x = js_sys::Array::new();
+    let arr_y = js_sys::Array::new();
+    let arr_c = js_sys::Array::new();
+
+    // for (x, y, c) in [
+    //     (-0.5 as f64, 0.5 as f64, 100 as usize),
+    //     (-1.0 as f64, 0.5 as f64, 100 as usize),
+    // ].iter().map(|&p| p) { // https://stackoverflow.com/questions/30467085/how-to-iterate-over-and-filter-an-array
+    //====
+    for (x, y, c) in mandelbrot_set(real, complex, samples, max_iter) {
+        arr_x.push(&JsValue::from(x));
+        arr_y.push(&JsValue::from(y));
+        arr_c.push(&JsValue::from(c as u32));
+    }
+
+    js_sys::Array::of3(
+        &Float64Array::new(&arr_x).buffer().into(),
+        &Float64Array::new(&arr_y).buffer().into(),
+        &Uint32Array::new(&arr_c).buffer().into())
+}
+
+fn mandelbrot_set(
     real: Range<f64>,
     complex: Range<f64>,
     samples: (usize, usize),
@@ -88,7 +120,8 @@ pub fn mandelbrot_set(
         (real.end - real.start) / samples.0 as f64,
         (complex.end - complex.start) / samples.1 as f64,
     );
-    return (0..(samples.0 * samples.1)).map(move |k| {
+
+    (0..(samples.0 * samples.1)).map(move |k| {
         let c = (
             real.start + step.0 * (k % samples.0) as f64,
             complex.start + step.1 * (k / samples.0) as f64,
@@ -99,6 +132,6 @@ pub fn mandelbrot_set(
             z = (z.0 * z.0 - z.1 * z.1 + c.0, 2.0 * z.0 * z.1 + c.1);
             cnt += 1;
         }
-        return (c.0, c.1, cnt);
-    });
+        (c.0, c.1, cnt)
+    })
 }
