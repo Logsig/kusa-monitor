@@ -6,16 +6,19 @@ use web_sys::HtmlCanvasElement;
 use js_sys::{Float64Array, Uint32Array};
 // use wasm_mt::utils::console_ln;
 
-/// Draw Mandelbrot set
-pub fn draw(element: HtmlCanvasElement)
--> DrawResult<impl Fn((i32, i32)) -> Option<(f64, f64)>> {
-    //======== !! refactor
+pub fn create_root(element: HtmlCanvasElement)
+-> DrawingArea<plotters::drawing::CanvasBackend, plotters::coord::Shift> {
     let backend = CanvasBackend::with_canvas_object(element).unwrap();
 
     let root = backend.into_drawing_area();
+    root
+}
+
+pub fn create_chart<'a>(root: &'a DrawingArea<plotters::drawing::CanvasBackend, plotters::coord::Shift>)
+-> Result<ChartContext<'a, plotters::drawing::CanvasBackend, RangedCoord<RangedCoordf64, RangedCoordf64>>, Box<dyn std::error::Error>> {
     root.fill(&WHITE)?;
 
-    let mut chart = ChartBuilder::on(&root)
+    let mut chart = ChartBuilder::on(root)
         .margin(20)
         .x_label_area_size(10)
         .y_label_area_size(10)
@@ -27,53 +30,41 @@ pub fn draw(element: HtmlCanvasElement)
         .disable_y_mesh()
         .draw()?;
 
+    Ok(chart)
+}
+
+pub fn get_params(chart: &ChartContext<'_, plotters::drawing::CanvasBackend, RangedCoord<RangedCoordf64, RangedCoordf64>>)
+-> (Range<f64>, Range<f64>, (usize, usize)) {
     let plotting_area = chart.plotting_area();
-    //========
 
     let range = plotting_area.get_pixel_range();
     let (pw, ph) = (range.0.end - range.0.start, range.1.end - range.1.start);
     let (xr, yr) = (chart.x_range(), chart.y_range());
-    // console_ln!("pw, ph, xr, yr: {:?} {:?} {} {}", xr, yr, pw as usize, ph as usize);
-    // pw, ph, xr, yr: -2.1..0.6 -1.2..1.2 512 324
 
-    for (x, y, c) in mandelbrot_set(xr, yr, (pw as usize, ph as usize), 100) {
-        if c != 100 {
-            plotting_area.draw_pixel((x, y), &HSLColor(c as f64 / 100.0, 1.0, 0.5))?;
-        } else {
-            plotting_area.draw_pixel((x, y), &BLACK)?;
-        }
-    }
+    (xr, yr, (pw as usize, ph as usize))
+}
 
-    root.present()?;
+/// Draw Mandelbrot set
+pub fn draw(element: HtmlCanvasElement)
+-> DrawResult<impl Fn((i32, i32)) -> Option<(f64, f64)>> {
+    let root = create_root(element);
+    let chart = create_chart(&root).unwrap();
+    let (real, complex, samples) = get_params(&chart);
+    draw_set(&root, &chart, mandelbrot_set(real, complex, samples, 100), 0).unwrap();
+
     Ok(Box::new(chart.into_coord_trans()))
 }
 
-pub fn draw_set(element: HtmlCanvasElement, set: impl Iterator<Item = (f64, f64, usize)>)
--> Result<(), Box<dyn std::error::Error>> {
-    //======== !! refactor
-    let backend = CanvasBackend::with_canvas_object(element).unwrap();
-
-    let root = backend.into_drawing_area();
-    root.fill(&WHITE)?;
-
-    let mut chart = ChartBuilder::on(&root)
-        .margin(20)
-        .x_label_area_size(10)
-        .y_label_area_size(10)
-        .build_ranged(-2.1..0.6, -1.2..1.2)?;
-
-    chart
-        .configure_mesh()
-        .disable_x_mesh()
-        .disable_y_mesh()
-        .draw()?;
-
+pub fn draw_set<'a>(
+    root: &'a DrawingArea<plotters::drawing::CanvasBackend, plotters::coord::Shift>,
+    chart: &ChartContext<'a, plotters::drawing::CanvasBackend, RangedCoord<RangedCoordf64, RangedCoordf64>>,
+    set: impl Iterator<Item = (f64, f64, usize)>,
+    salt: u8,
+) -> Result<(), Box<dyn std::error::Error>> {
     let plotting_area = chart.plotting_area();
-    //========
-
     for (x, y, c) in set {
         if c != 100 {
-            plotting_area.draw_pixel((x, y), &HSLColor(c as f64 / 100.0, 1.0, 0.5))?;
+            plotting_area.draw_pixel((x, y), &HSLColor((c + salt as usize) as f64 / 100.0, 1.0, 0.5))?;
         } else {
             plotting_area.draw_pixel((x, y), &BLACK)?;
         }

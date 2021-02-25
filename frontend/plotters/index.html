@@ -103,9 +103,8 @@
 
                 setupCanvas(canvas);
 
-                // chart = await updatePlot(wbg, canvas, plotType, status);
-                //==== @@ test
-                plotMandelbrotMt(wbg);
+                chart = await updatePlot(wbg, canvas, plotType, status);
+                if (1) { setTimeout(() => plotMandelbrotMt(wbg), 500); }
             })();
         </script>
     </body>

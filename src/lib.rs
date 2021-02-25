@@ -49,5 +49,9 @@ async fn entry_worker() {
         let ms = 2000;
         console_ln!("worker: looping (every {}ms): {}", ms, counter.inc());
         sleep(ms).await;
+        if counter.num() > 4 {
+            console_ln!("worker: bye!");
+            break;
+        }
     }
 }
