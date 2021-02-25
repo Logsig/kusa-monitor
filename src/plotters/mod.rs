@@ -26,6 +26,14 @@ pub struct Point {
     pub y: f64,
 }
 
+use plotters::prelude::*;
+impl Chart {
+    pub fn from_ctx(
+        chart: ChartContext<'_, CanvasBackend, RangedCoord<RangedCoordf64, RangedCoordf64>>) -> Chart {
+        Chart { convert: Box::new(chart.into_coord_trans()) }
+    }
+}
+
 #[wasm_bindgen]
 impl Chart {
     /// Draw provided power function on the canvas element using it's id.

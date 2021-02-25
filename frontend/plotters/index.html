@@ -52,7 +52,10 @@
                 if (!_thread) {
                     _thread = await (new wbg.PlotThread(Mod)).and_init();
                 }
-                _thread = await _thread.mandelbrot(canvas);
+
+                let chart = null;
+                [_thread, chart] = await _thread.mandelbrot(canvas);
+                return chart;
             };
 
             const updatePlot = async (wbg, canvas, plotType, status) => {
@@ -66,7 +69,7 @@
                 let chart = null;
                 switch (selected.value) {
                     case "mandelbrot": chart = Chart.mandelbrot(canvas); break;
-                    case "mandelbrot_mt": plotMandelbrotMt(wbg); break;
+                    case "mandelbrot_mt": chart = plotMandelbrotMt(wbg); break;
                     default: chart = Chart.power("canvas", Number(selected.value));
                 }
 
