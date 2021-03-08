@@ -28,6 +28,8 @@ features = [
   'Element',
   'HtmlCanvasElement',
   'HtmlElement',
+  'ImageData',
   'Node',
+  'Performance',
   'Window',
 ]

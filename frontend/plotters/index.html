@@ -34,6 +34,26 @@
         <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
 
         <script type="module">
+        (async () => {
+            const THREE = await import('../deps/three/build/three.module.js');
+            window.THREE = THREE;
+
+            const Threelet = (await import('../deps/threelet.esm.js')).default;
+
+            const threelet = new Threelet({width: 120, height: 80, optAxes: false});
+            document.body.prepend(threelet.domElement);
+
+            const cube = Threelet.Utils.createTestCube([3.0, 2.0, 2.0], 0xff00ff);
+            cube.material.wireframe = true;
+            threelet.scene.add(cube);
+
+            threelet.update = (t, dt) => {
+                cube.rotation.x = Math.PI/2 * t;
+            };
+//            threelet.updateLoop(20); // fps
+        })();
+        </script>
+        <script type="module">
             import Mod from '../build/app.esm.js';
 
             const setupCanvas = (canvas) => {
@@ -105,9 +125,11 @@
                 });
 
                 setupCanvas(canvas);
-
                 chart = await updatePlot(wbg, canvas, plotType, status);
-                if (1) { setTimeout(() => plotMandelbrotMt(wbg), 500); }
+
+                //---- debug
+                setTimeout(() => wbg.Chart.mandelbrot(canvas), 500);
+                // setTimeout(() => plotMandelbrotMt(wbg), 500);
             })();
         </script>
     </body>

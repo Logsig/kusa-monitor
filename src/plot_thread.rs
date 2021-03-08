@@ -32,7 +32,7 @@ impl PlotThread {
     pub async fn mandelbrot(self, canvas: HtmlCanvasElement) -> js_sys::Array {
         let root = mandelbrot::create_root(canvas);
         let chart = mandelbrot::create_chart(&root).unwrap();
-        let (real, complex, samples) = mandelbrot::get_params(&chart);
+        let (real, complex, samples, offset) = mandelbrot::get_params(&chart);
 
         let jsv = exec!(self.th, move || {
             let arr = mandelbrot::mandelbrot_arr_ab(real, complex, samples, 100);
@@ -56,6 +56,8 @@ impl PlotThread {
             arrs.1.get_index(idx),
             arrs.2.get_index(idx) as usize,
         ));
+
+        // @@ slow !!
         mandelbrot::draw_set(&root, &chart, set, 5).map_err(|err| err.to_string()).unwrap();
 
         js_sys::Array::of2(
