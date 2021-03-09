@@ -1,23 +1,25 @@
 use crate::DrawResult;
+
 use plotters::prelude::*;
+
 use std::ops::Range;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::Clamped;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
-use js_sys::{Float64Array, Uint32Array};
+use js_sys::{ArrayBuffer, Float64Array, Uint8Array, Uint32Array};
 use wasm_mt::utils::console_ln;
 
 pub fn create_root(element: HtmlCanvasElement)
--> DrawingArea<plotters::drawing::CanvasBackend, plotters::coord::Shift> {
+-> DrawingArea<CanvasBackend, plotters::coord::Shift> {
     let backend = CanvasBackend::with_canvas_object(element).unwrap();
 
     let root = backend.into_drawing_area();
     root
 }
 
-pub fn create_chart(root: &DrawingArea<plotters::drawing::CanvasBackend, plotters::coord::Shift>)
--> Result<ChartContext<plotters::drawing::CanvasBackend, RangedCoord<RangedCoordf64, RangedCoordf64>>, Box<dyn std::error::Error>> {
+pub fn create_chart(root: &DrawingArea<CanvasBackend, plotters::coord::Shift>)
+-> Result<ChartContext<CanvasBackend, RangedCoord<RangedCoordf64, RangedCoordf64>>, Box<dyn std::error::Error>> {
     root.fill(&WHITE)?;
 
     let mut chart = ChartBuilder::on(root)
@@ -35,7 +37,7 @@ pub fn create_chart(root: &DrawingArea<plotters::drawing::CanvasBackend, plotter
     Ok(chart)
 }
 
-pub fn get_params(chart: &ChartContext<'_, plotters::drawing::CanvasBackend, RangedCoord<RangedCoordf64, RangedCoordf64>>)
+pub fn get_params(chart: &ChartContext<'_, CanvasBackend, RangedCoord<RangedCoordf64, RangedCoordf64>>)
 -> (Range<f64>, Range<f64>, (i32, i32), (i32, i32)) {
     let plotting_area = chart.plotting_area();
 
@@ -57,24 +59,25 @@ pub fn draw(element: HtmlCanvasElement)
 
     let perf = web_sys::window().unwrap().performance().unwrap();
 
-    let time_start = perf.now();
+    // let time_start = perf.now();
     let max_iter = 100;
     let set = mandelbrot_set(real, complex, samples, max_iter);
     // console_ln!("@@ Took {:.2}ms", perf.now() - time_start); // ~ 0; just creating an iterator
 
     let time_start = perf.now();
-    // draw_set(&root, &chart, set, max_iter, 0).unwrap(); // slow!!
+    // draw_set(&root, &chart, set, max_iter, 0).unwrap(); // slow
     //====
     let wh = (samples.0 as u32, samples.1 as u32);
-    draw_set_via_image(&root, &ctx, wh, offset, set, max_iter, 0).unwrap();
+    draw_set_as_image(&root, &ctx, wh, offset, set, max_iter, 0).unwrap();
     console_ln!("@@ Drawing took {:.2}ms", perf.now() - time_start);
 
     Ok(Box::new(chart.into_coord_trans()))
 }
 
+#[allow(dead_code)] // obsolete; slow!!
 pub fn draw_set<'a>(
-    root: &'a DrawingArea<plotters::drawing::CanvasBackend, plotters::coord::Shift>,
-    chart: &ChartContext<'a, plotters::drawing::CanvasBackend, RangedCoord<RangedCoordf64, RangedCoordf64>>,
+    root: &'a DrawingArea<CanvasBackend, plotters::coord::Shift>,
+    chart: &ChartContext<'a, CanvasBackend, RangedCoord<RangedCoordf64, RangedCoordf64>>,
     set: impl Iterator<Item = (f64, f64, usize)>,
     max_iter: usize,
     salt: u8,
@@ -93,20 +96,10 @@ pub fn draw_set<'a>(
     Ok(())
 }
 
-pub fn draw_set_via_image(
-    root: &DrawingArea<plotters::drawing::CanvasBackend, plotters::coord::Shift>,
-    ctx: &CanvasRenderingContext2d,
-    wh: (u32, u32),
-    offset: (i32, i32),
-    set: impl Iterator<Item = (f64, f64, usize)>,
-    max_iter: usize,
-    salt: u8,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let (width, height) = wh;
 
-    //======== TODO calc as arraybuffer; deprecate `mandelbrot_arr_ab()`
-    let mut data = vec![255; (4 * width * height) as usize];
-    for (idx, (_x, _y, c)) in set.enumerate() {
+fn to_image(set: impl Iterator<Item = (f64, f64, usize)>, max_iter: usize, salt: u8,
+) -> impl Iterator<Item = (u8, u8, u8, u8)> {
+    set.map(move |(_x, _y, c)| {
         let (r, g, b) = if c < max_iter {
             plotters::style::Color::rgb(
                 &HSLColor((c + salt as usize) as f64 / 100.0, 1.0, 0.5))
@@ -114,22 +107,39 @@ pub fn draw_set_via_image(
             (0, 0, 0) // black
         };
 
+        (r, g, b, 255)
+    })
+}
+
+pub fn draw_set_as_image(
+    root: &DrawingArea<CanvasBackend, plotters::coord::Shift>,
+    ctx: &CanvasRenderingContext2d,
+    wh: (u32, u32),
+    offset: (i32, i32),
+    set: impl Iterator<Item = (f64, f64, usize)>,
+    max_iter: usize,
+    salt: u8,
+) -> Result<(), JsValue> {
+    let (width, height) = wh;
+
+    let mut data = vec![255; (4 * width * height) as usize];
+    to_image(set, max_iter, salt).enumerate().for_each(|(idx, (r, g, b, a))| {
         data[4 * idx] = r;
         data[4 * idx + 1] = g;
         data[4 * idx + 2] = b;
-        // data[4 * idx + 3] = 255;
-    }
-    //========
+        data[4 * idx + 3] = a;
+    });
 
     let data = ImageData::new_with_u8_clamped_array_and_sh(
-            Clamped(&mut data), width, height).unwrap().into();
-    ctx.put_image_data(&data, offset.0 as f64, offset.1 as f64).unwrap();
+            Clamped(&mut data), width, height)?.into();
+    ctx.put_image_data(&data, offset.0 as f64, offset.1 as f64)?;
 
     root.present().unwrap();
     Ok(())
 }
 
-pub fn mandelbrot_arr_ab(
+// obsolete
+pub fn mandelbrot_data_raw(
     real: Range<f64>,
     complex: Range<f64>,
     samples: (i32, i32),
@@ -154,6 +164,26 @@ pub fn mandelbrot_arr_ab(
         &Float64Array::new(&arr_x).buffer().into(),
         &Float64Array::new(&arr_y).buffer().into(),
         &Uint32Array::new(&arr_c).buffer().into())
+}
+
+pub fn mandelbrot_data_image(
+    real: Range<f64>,
+    complex: Range<f64>,
+    samples: (i32, i32),
+    max_iter: usize,
+    salt: u8,
+) -> ArrayBuffer {
+    let arr = js_sys::Array::new();
+
+    let set = mandelbrot_set(real, complex, samples, max_iter);
+    to_image(set, max_iter, salt).for_each(|(r, g, b, a)| {
+        arr.push(&JsValue::from(r));
+        arr.push(&JsValue::from(g));
+        arr.push(&JsValue::from(b));
+        arr.push(&JsValue::from(a));
+    });
+
+    Uint8Array::new(&arr).buffer().into()
 }
 
 fn mandelbrot_set(
