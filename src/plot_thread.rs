@@ -34,8 +34,10 @@ impl PlotThread {
         let chart = mandelbrot::create_chart(&root).unwrap();
         let (real, complex, samples, offset) = mandelbrot::get_params(&chart);
 
+        let max_iter = 100;
+
         let jsv = exec!(self.th, move || {
-            let arr = mandelbrot::mandelbrot_arr_ab(real, complex, samples, 100);
+            let arr = mandelbrot::mandelbrot_arr_ab(real, complex, samples, max_iter);
 
             // TODO transferables !!!!!!!!
             Ok(JsValue::from(arr))
@@ -58,7 +60,13 @@ impl PlotThread {
         ));
 
         // @@ slow !!
-        mandelbrot::draw_set(&root, &chart, set, 5).map_err(|err| err.to_string()).unwrap();
+        mandelbrot::draw_set(&root, &chart, set, max_iter, 5)
+            .map_err(|err| err.to_string()).unwrap();
+        //====
+        // let wh = (samples.0 as u32, samples.1 as u32);
+        // mandelbrot::draw_set_via_image(
+        //     &root, &ctx, wh, offset, set, max_iter, 0).unwrap();
+
 
         js_sys::Array::of2(
             &JsValue::from(self), // FIXME *
