@@ -7,31 +7,73 @@
         <link rel="stylesheet" href="./style.css">
     </head>
     <body>
+        <p>
+            <a href="https://github.com/Logsig/kusa-monitor/blob/master/frontend/plotters/index.html">source code</a>
+        </p>
         <main>
-            <h1>plotters/index.html</h1>
             <div id="coord"></div>
-            <canvas id="canvas" width="600" height="400"></canvas>
-            <div id="status">Loading WebAssembly...</div>
+            <canvas style="border-style: solid; border-color: lightgray;" id="canvas" width="600" height="400"></canvas>
+            <div id="status" style="display: none;">Loading WebAssembly...</div>
+            <hr />
+
+            <div id="experiment" style="width: 100%; background: lightgray;">
+                multithreading:
+                <input type="radio" id="radio1" name="output" value="mt" checked>
+                <label for="radio1">enabled</label>
+
+                <input type="radio" id="radio2" name="output" value="st">
+                <label for="radio2">disabled</label>
+                <br />
+
+                <span id="cube"></span>
+                <span id="notice"></span>
+                <br />
+
+                <button id="plot">Plot Mandelbrot Set (<span id="iter"></span> iterations)</button>
+            </div>
+            <hr />
+
             <div id="control">
-                <label for="plot-type">Demo: </label>
+                <label for="plot-type">misc: </label>
                 <select id="plot-type">
-                    <option value="0">Graph of y=1</option>
-                    <option value="1">Graph of y=x</option>
-                    <option value="2">Graph of y=x^2</option>
-                    <option value="3">Graph of y=x^3</option>
-                    <option value="4">Graph of y=x^4</option>
-                    <option value="5">Graph of y=x^5</option>
-                    <option value="mandelbrot">Mandelbrot Set</option>
-                    <option value="mandelbrot_mt">Mandelbrot Set Multithread</option>
+                    <option value="none"></option>
+                    <option value="0">y = 1</option>
+                    <option value="1">y = x</option>
+                    <option value="2">y = x^2</option>
+                    <option value="3">y = x^3</option>
+                    <option value="4">y = x^4</option>
+                    <option value="5">y = x^5</option>
                 </select>
             </div>
         </main>
         <footer>
-            Thanks: this demo is based on <a href="https://github.com/38/plotters/blob/master/examples/wasm-demo" target="a">examples/wasm-demo</a>
-            of <a href="https://github.com/38/plotters" target="a">plotters</a>.
+            Thanks: this demo is a mod of <a href="https://github.com/38/plotters/blob/master/examples/wasm-demo" target="a">examples/wasm-demo</a>
+            of the <a href="https://github.com/38/plotters" target="a">plotters</a> crate.
         </footer>
 
         <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+
+        <script type="module">
+        (async () => {
+            const THREE = await import('../deps/three/build/three.module.js');
+            window.THREE = THREE;
+            const Threelet = (await import('../deps/threelet.esm.js')).default;
+
+            const threelet = new Threelet({width: 120, height: 80, optAxes: false});
+
+            // document.body.prepend(threelet.domElement);
+            document.getElementById('cube').appendChild(threelet.domElement);
+
+            const cube = Threelet.Utils.createTestCube([3.0, 2.0, 2.0], 0xff00ff);
+            cube.material.wireframe = true;
+            threelet.scene.add(cube);
+
+            threelet.update = (t, dt) => {
+                cube.rotation.x = Math.PI/2 * t;
+            };
+            threelet.updateLoop(20); // fps
+        })();
+        </script>
 
         <script type="module">
             import Mod from '../build/app.esm.js';
@@ -47,36 +89,55 @@
                 canvas.getContext("2d").scale(dpr, dpr);
             };
 
-            let _thread = null;
-            const plotMandelbrotMt = async (wbg) => {
-                if (!_thread) {
-                    _thread = await (new wbg.PlotThread(Mod)).and_init();
-                }
-
-                let chart = null;
-                [_thread, chart] = await _thread.mandelbrot(canvas);
-                return chart;
-            };
-
-            const updatePlot = async (wbg, canvas, plotType, status) => {
-                const { Chart } = wbg;
-
-                const selected = plotType.selectedOptions[0];
+            const updatePlot = async (wbg, canvas, selected, status) => {
                 status.innerText = `Rendering ${selected.innerText}...`;
 
                 const start = performance.now();
-
-                let chart = null;
-                switch (selected.value) {
-                    case "mandelbrot": chart = Chart.mandelbrot(canvas); break;
-                    case "mandelbrot_mt": chart = plotMandelbrotMt(wbg); break;
-                    default: chart = Chart.power("canvas", Number(selected.value));
-                }
-
+                const chart = wbg.Chart.power("canvas", Number(selected.value));
                 const end = performance.now();
                 status.innerText = `Rendered ${selected.innerText} in ${Math.ceil(end - start)}ms`;
 
                 return chart;
+            };
+
+            const clearPlot = canvas => canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            const setupExperiment = (canvas, onPlot) => {
+                const radios = {
+                    radio1: document.getElementById('radio1'),
+                    radio2: document.getElementById('radio2'),
+                };
+                const notice = document.getElementById('notice');
+                const onRadioChanged = value => {
+                    console.log('onRadioChanged(): value:', value);
+                    const msg = '⚠️ Observe LAG of cube rendering when plotting without multithreading.';
+                    notice.textContent = value === 'st' ? msg : '';
+
+                    clearPlot(canvas);
+                };
+
+                let radioValue = 'mt'; // default
+                for (let el of Object.values(radios)) {
+                    el.addEventListener('click', e => {
+                        const val = el.value;
+                        if (val !== radioValue) {
+                            radioValue = val;
+                            onRadioChanged(val);
+                        }
+                    });
+                }
+                onRadioChanged('mt'); // first time
+
+                //
+
+                const maxIter = 15000;
+                document.getElementById('iter').textContent = `${maxIter}`;
+
+                const plotBtn = document.getElementById('plot');
+                plotBtn.addEventListener('click', async e => {
+                    plotBtn.disabled = true;
+                    await onPlot(radioValue === 'mt', maxIter);
+                    plotBtn.disabled = false;
+                });
             };
 
             (async () => {
@@ -88,12 +149,19 @@
                 let chart = null;
 
                 status.innerText = "WebAssembly loaded!";
+                const plotMisc = async (can, selected) => {
+                    if (selected.value === 'none') {
+                        clearPlot(can);
+                    } else {
+                        chart = await updatePlot(wbg, can, selected, status);
+                    }
+                };
                 plotType.addEventListener("change", async () => {
-                    chart = await updatePlot(wbg, canvas, plotType, status);
+                    plotMisc(canvas, plotType.selectedOptions[0]);
                 });
                 window.addEventListener("resize", async () => {
                     setupCanvas(canvas);
-                    chart = await updatePlot(wbg, canvas, plotType, status);
+                    plotMisc(canvas, plotType.selectedOptions[0]);
                 });
                 window.addEventListener("mousemove", (event) => {
                     if (!chart) return;
@@ -106,8 +174,19 @@
 
                 setupCanvas(canvas);
 
-                chart = await updatePlot(wbg, canvas, plotType, status);
-                if (1) { setTimeout(() => plotMandelbrotMt(wbg), 500); }
+                //
+
+                let _thread = await (new wbg.PlotThread(Mod)).and_init();
+                const mandelbrotMt = async (can, maxIter) => {
+                    let chart = null;
+                    [_thread, chart] = await _thread.mandelbrot(can, maxIter);
+                    return chart;
+                };
+
+                setupExperiment(canvas, async (mt, maxIter) => { /* onPlot() */
+                    chart = mt ? await mandelbrotMt(canvas, maxIter) :
+                        await wbg.Chart.mandelbrot(canvas, maxIter);
+                });
             })();
         </script>
     </body>
