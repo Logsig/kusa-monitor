@@ -12,10 +12,11 @@
         </p>
         <main>
             <div id="coord"></div>
-            <canvas id="canvas" width="600" height="400"></canvas>
+            <canvas style="border-style: solid; border-color: lightgray;" id="canvas" width="600" height="400"></canvas>
             <div id="status" style="display: none;">Loading WebAssembly...</div>
+            <hr />
 
-            <div id="experiment" style="width: 100%; background: gray;">
+            <div id="experiment" style="width: 100%; background: lightgray;">
                 multithreading:
                 <input type="radio" id="radio1" name="output" value="mt" checked>
                 <label for="radio1">enabled</label>
@@ -25,7 +26,7 @@
                 <br />
 
                 <span id="cube"></span>
-                <span id="notice">⚠️ Observe LAG of cube rendering when plotting without multithreading.</span>
+                <span id="notice"></span>
                 <br />
 
                 <button id="plot">Plot Mandelbrot Set (<span id="iter"></span> iterations)</button>
@@ -35,6 +36,7 @@
             <div id="control">
                 <label for="plot-type">misc: </label>
                 <select id="plot-type">
+                    <option value="none"></option>
                     <option value="0">y = 1</option>
                     <option value="1">y = x</option>
                     <option value="2">y = x^2</option>
@@ -87,8 +89,7 @@
                 canvas.getContext("2d").scale(dpr, dpr);
             };
 
-            const updatePlot = async (wbg, canvas, plotType, status) => {
-                const selected = plotType.selectedOptions[0];
+            const updatePlot = async (wbg, canvas, selected, status) => {
                 status.innerText = `Rendering ${selected.innerText}...`;
 
                 const start = performance.now();
@@ -99,7 +100,8 @@
                 return chart;
             };
 
-            const setupExperiment = onPlot => {
+            const clearPlot = canvas => canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            const setupExperiment = (canvas, onPlot) => {
                 const radios = {
                     radio1: document.getElementById('radio1'),
                     radio2: document.getElementById('radio2'),
@@ -107,7 +109,10 @@
                 const notice = document.getElementById('notice');
                 const onRadioChanged = value => {
                     console.log('onRadioChanged(): value:', value);
-                    notice.style.display = value === 'st' ? 'inherit' : 'none';
+                    const msg = '⚠️ Observe LAG of cube rendering when plotting without multithreading.';
+                    notice.textContent = value === 'st' ? msg : '';
+
+                    clearPlot(canvas);
                 };
 
                 let radioValue = 'mt'; // default
@@ -144,12 +149,19 @@
                 let chart = null;
 
                 status.innerText = "WebAssembly loaded!";
+                const plotMisc = async (can, selected) => {
+                    if (selected.value === 'none') {
+                        clearPlot(can);
+                    } else {
+                        chart = await updatePlot(wbg, can, selected, status);
+                    }
+                };
                 plotType.addEventListener("change", async () => {
-                    chart = await updatePlot(wbg, canvas, plotType, status);
+                    plotMisc(canvas, plotType.selectedOptions[0]);
                 });
                 window.addEventListener("resize", async () => {
                     setupCanvas(canvas);
-                    chart = await updatePlot(wbg, canvas, plotType, status);
+                    plotMisc(canvas, plotType.selectedOptions[0]);
                 });
                 window.addEventListener("mousemove", (event) => {
                     if (!chart) return;
@@ -161,7 +173,6 @@
                 });
 
                 setupCanvas(canvas);
-                chart = await updatePlot(wbg, canvas, plotType, status);
 
                 //
 
@@ -172,7 +183,7 @@
                     return chart;
                 };
 
-                setupExperiment(async (mt, maxIter) => { /* onPlot() */
+                setupExperiment(canvas, async (mt, maxIter) => { /* onPlot() */
                     chart = mt ? await mandelbrotMt(canvas, maxIter) :
                         await wbg.Chart.mandelbrot(canvas, maxIter);
                 });
