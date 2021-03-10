@@ -53,14 +53,15 @@ pub fn draw(element: HtmlCanvasElement)
 -> DrawResult<impl Fn((i32, i32)) -> Option<(f64, f64)>> {
     let ctx = element.get_context("2d").unwrap().unwrap().dyn_into().unwrap();
     let root = create_root(element);
-
     let chart = create_chart(&root).unwrap();
+
     let (real, complex, samples, offset) = get_params(&chart);
+    // TODO refactor `max_iter` including 'plot_thread.rs'
+    let max_iter = 10_000;
 
     let perf = web_sys::window().unwrap().performance().unwrap();
 
     // let time_start = perf.now();
-    let max_iter = 100;
     let set = mandelbrot_set(real, complex, samples, max_iter);
     // console_ln!("@@ Took {:.2}ms", perf.now() - time_start); // ~ 0; just creating an iterator
 
@@ -186,7 +187,7 @@ pub fn mandelbrot_data_image(
     Uint8Array::new(&arr).buffer().into()
 }
 
-fn mandelbrot_set(
+pub fn mandelbrot_set(
     real: Range<f64>,
     complex: Range<f64>,
     samples: (i32, i32),
@@ -196,8 +197,8 @@ fn mandelbrot_set(
         (real.end - real.start) / samples.0 as f64,
         (complex.end - complex.start) / samples.1 as f64,
     );
-
     let samples = (samples.0 as usize, samples.1 as usize);
+
     (0..(samples.0 * samples.1)).map(move |k| {
         let c = (
             real.start + step.0 * (k % samples.0) as f64,
