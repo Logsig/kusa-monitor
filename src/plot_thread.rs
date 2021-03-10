@@ -67,8 +67,13 @@ impl PlotThread {
 
         let (width, height) = (samples.0 as u32, samples.1 as u32);
         let arr = Uint8Array::new(jsv.dyn_ref::<ArrayBuffer>().unwrap());
+
+        // TODO: Instead of `arr.to_vec()`, maybe use `arr.copy_to()`
+        //   with pre-allocated `Vec<u8>` in `self`
+        // https://rustwasm.github.io/wasm-bindgen/api/js_sys/struct.Uint8Array.html#method.copy_to
         let data = ImageData::new_with_u8_clamped_array_and_sh(
             Clamped(&mut arr.to_vec()), width, height)?.into();
+
         ctx.put_image_data(&data, offset.0 as f64, offset.1 as f64)?;
 
         Ok(())
