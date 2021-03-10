@@ -49,15 +49,13 @@ pub fn get_params(chart: &ChartContext<'_, CanvasBackend, RangedCoord<RangedCoor
 }
 
 /// Draw Mandelbrot set
-pub fn draw(element: HtmlCanvasElement)
+pub fn draw(element: HtmlCanvasElement, max_iter: usize)
 -> DrawResult<impl Fn((i32, i32)) -> Option<(f64, f64)>> {
     let ctx = element.get_context("2d").unwrap().unwrap().dyn_into().unwrap();
     let root = create_root(element);
     let chart = create_chart(&root).unwrap();
 
     let (real, complex, samples, offset) = get_params(&chart);
-    // TODO refactor `max_iter` including 'plot_thread.rs'
-    let max_iter = 10_000;
 
     let perf = web_sys::window().unwrap().performance().unwrap();
 
@@ -68,9 +66,9 @@ pub fn draw(element: HtmlCanvasElement)
     let time_start = perf.now();
     // draw_set(&root, &chart, set, max_iter, 0).unwrap(); // slow
     //====
-    let wh = (samples.0 as u32, samples.1 as u32);
-    draw_set_as_image(&root, &ctx, wh, offset, set, max_iter, 0).unwrap();
-    console_ln!("@@ Drawing took {:.2}ms", perf.now() - time_start);
+    draw_set_as_image(&root, &ctx,(samples.0 as u32, samples.1 as u32),
+                      offset, set, max_iter, 0).unwrap();
+    console_ln!("@@ `draw` took {:.2}ms", perf.now() - time_start);
 
     Ok(Box::new(chart.into_coord_trans()))
 }
@@ -198,6 +196,8 @@ pub fn mandelbrot_set(
         (complex.end - complex.start) / samples.1 as f64,
     );
     let samples = (samples.0 as usize, samples.1 as usize);
+
+    console_ln!("mandelbrot_set(): max_iter: {}", max_iter);
 
     (0..(samples.0 * samples.1)).map(move |k| {
         let c = (

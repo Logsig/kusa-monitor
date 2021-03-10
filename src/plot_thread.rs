@@ -31,15 +31,19 @@ impl PlotThread {
 
     // FIXME * -- https://github.com/rustwasm/wasm-bindgen/issues/1858#issuecomment-552108855
     //   pub async fn mandelbrot(&self) { ... }
-    pub async fn mandelbrot(self, element: HtmlCanvasElement) -> Result<js_sys::Array, JsValue> {
+    pub async fn mandelbrot(self, element: HtmlCanvasElement, max_iter: usize) -> Result<js_sys::Array, JsValue> {
         let ctx = element.get_context("2d")?.unwrap().dyn_into::<CanvasRenderingContext2d>()?;
         let root = mandelbrot::create_root(element);
         let chart = mandelbrot::create_chart(&root).unwrap();
-        let max_iter = 10_000;
+
+        let perf = web_sys::window().unwrap().performance().unwrap();
+        let time_start = perf.now();
 
         // self.draw_obsolete(&root, &chart, max_iter).await?;
         //====
         self.draw(&chart, &ctx, max_iter).await?;
+
+        console_ln!("@@ `draw` took {:.2}ms", perf.now() - time_start);
 
         Ok(js_sys::Array::of2(
             &JsValue::from(self), // FIXME *

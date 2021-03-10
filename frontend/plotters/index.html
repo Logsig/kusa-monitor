@@ -124,7 +124,7 @@
 
                 //
 
-                const maxIter = 101000;
+                const maxIter = 15000;
                 document.getElementById('max').textContent = `${maxIter}`;
 
                 const plotBtn = document.getElementById('plot');
@@ -166,27 +166,19 @@
                 //
 
                 let _thread = await (new wbg.PlotThread(Mod)).and_init();
-                const mandelbrotMt = async () => {
+                const mandelbrotMt = async (maxIter) => {
                     let chart = null;
-                    [_thread, chart] = await _thread.mandelbrot(canvas);
+                    [_thread, chart] = await _thread.mandelbrot(canvas, maxIter);
                     return chart;
                 };
 
-                // TODO pass maxIter
                 // TODO fix white out
                 // TODO back to 20fps
                 // TODO update dist
                 setupExperiment(async (mt, maxIter) => { /* onPlot() */
-                    if (mt) {
-                        chart = await mandelbrotMt();
-                    } else {
-                        chart = await wbg.Chart.mandelbrot(canvas);
-                    }
+                    chart = mt ? await mandelbrotMt(maxIter) :
+                        await wbg.Chart.mandelbrot(canvas, maxIter);
                 });
-
-                //---- debug
-                // setTimeout(() => wbg.Chart.mandelbrot(canvas), 500);
-                // setTimeout(() => mandelbrotMt(), 500);
             })();
         </script>
     </body>
