@@ -64,7 +64,7 @@ pub fn draw(element: HtmlCanvasElement, max_iter: usize)
     // console_ln!("@@ Took {:.2}ms", perf.now() - time_start); // ~ 0; just creating an iterator
 
     let time_start = perf.now();
-    // draw_set(&root, &chart, set, max_iter, 0).unwrap(); // slow
+    // draw_set(&root, &chart, set, max_iter, 0).unwrap(); // obsolete; slow
     //====
     draw_set_as_image(&root, &ctx,(samples.0 as u32, samples.1 as u32),
                       offset, set, max_iter, 0).unwrap();

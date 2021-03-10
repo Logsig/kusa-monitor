@@ -28,7 +28,7 @@
                 <span id="notice">⚠️ Observe LAG of cube rendering when plotting without multithreading.</span>
                 <br />
 
-                <button id="plot">Plot Mandelbrot Set (maxIter: <span id="max"></span>)</button>
+                <button id="plot">Plot Mandelbrot Set (<span id="iter"></span> iterations)</button>
             </div>
             <hr />
 
@@ -69,7 +69,7 @@
             threelet.update = (t, dt) => {
                 cube.rotation.x = Math.PI/2 * t;
             };
-            threelet.updateLoop(4); // fps
+            threelet.updateLoop(20); // fps
         })();
         </script>
 
@@ -125,7 +125,7 @@
                 //
 
                 const maxIter = 15000;
-                document.getElementById('max').textContent = `${maxIter}`;
+                document.getElementById('iter').textContent = `${maxIter}`;
 
                 const plotBtn = document.getElementById('plot');
                 plotBtn.addEventListener('click', async e => {
@@ -166,17 +166,14 @@
                 //
 
                 let _thread = await (new wbg.PlotThread(Mod)).and_init();
-                const mandelbrotMt = async (maxIter) => {
+                const mandelbrotMt = async (can, maxIter) => {
                     let chart = null;
-                    [_thread, chart] = await _thread.mandelbrot(canvas, maxIter);
+                    [_thread, chart] = await _thread.mandelbrot(can, maxIter);
                     return chart;
                 };
 
-                // TODO fix white out
-                // TODO back to 20fps
-                // TODO update dist
                 setupExperiment(async (mt, maxIter) => { /* onPlot() */
-                    chart = mt ? await mandelbrotMt(maxIter) :
+                    chart = mt ? await mandelbrotMt(canvas, maxIter) :
                         await wbg.Chart.mandelbrot(canvas, maxIter);
                 });
             })();
