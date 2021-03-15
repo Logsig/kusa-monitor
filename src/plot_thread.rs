@@ -11,21 +11,33 @@ use js_sys::{ArrayBuffer, Float64Array, Uint8Array, Uint32Array, Object};
 use wasm_mt::prelude::*;
 use wasm_mt::utils::console_ln;
 
+use std::cell::RefCell;
+
 #[wasm_bindgen]
 pub struct PlotThread {
-    th: wasm_mt::Thread,
+    mt: wasm_mt::WasmMt,
+    th: RefCell<Option<wasm_mt::Thread>>,
 }
+
+macro_rules! th { ($self:expr) => ($self.th.borrow().as_ref().unwrap()); }
 
 #[wasm_bindgen]
 impl PlotThread {
     #[wasm_bindgen(constructor)]
     pub fn new(clazz: &Object) -> Self {
         console_ln!("PlotThread::new(): hi");
-        Self { th: create_mt(clazz).thread() }
+        Self {
+            mt: create_mt(clazz),
+            th: RefCell::new(None),
+        }
     }
 
     pub async fn and_init(self) -> Self {
-        self.th.init().await.unwrap();
+        self.mt.init().await.unwrap();
+
+        let th = self.mt.thread().and_init().await.unwrap();
+        self.th.replace(Some(th));
+
         self
     }
 
@@ -57,7 +69,7 @@ impl PlotThread {
         max_iter: usize,
     ) -> Result<(), JsValue> {
         let (real, complex, samples, offset) = mandelbrot::get_params(chart);
-        let jsv = exec!(self.th, move || {
+        let jsv = exec!(th!(self), move || {
             let ab = mandelbrot::mandelbrot_data_image(
                 real, complex, samples, max_iter, 5);
 
@@ -87,7 +99,7 @@ impl PlotThread {
         max_iter: usize,
     ) -> Result<(), JsValue> {
         let (real, complex, samples, _offset) = mandelbrot::get_params(chart);
-        let jsv = exec!(self.th, move || {
+        let jsv = exec!(th!(self), move || {
             let arr = mandelbrot::mandelbrot_data_raw(
                 real, complex, samples, max_iter);
 

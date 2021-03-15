@@ -22,7 +22,8 @@ pub fn app(clazz: Object) -> Result<(), JsValue> {
 
     let mt = create_mt(&clazz);
     spawn_local(async move {
-        let th = mt.thread().and_init().await.unwrap();
+        let th = mt.and_init().await.unwrap()
+            .thread().and_init().await.unwrap();
 
         let _ = exec!(th, async move || {
             let _ = entry_worker().await;
