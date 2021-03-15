@@ -1078,6 +1078,8 @@ checksum = "c9ba19973a58daf4db6f352eda73dc0e289493cd29fb2632eb172085b6521acd"
 [[package]]
 name = "wasm-mt"
 version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e704cc70e392aace0c7ba63bedc627459677992d251199bb13083fdf1cb3e5cf"
 dependencies = [
  "bincode",
  "js-sys",

@@ -20,6 +20,7 @@ pub struct PlotThread {
     buf: RefCell<Vec<u8>>,
 }
 
+// kludge
 macro_rules! th { ($self:expr) => ($self.th.borrow().as_ref().unwrap()); }
 
 #[wasm_bindgen]
