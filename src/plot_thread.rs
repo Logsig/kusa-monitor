@@ -17,6 +17,7 @@ use std::cell::RefCell;
 pub struct PlotThread {
     mt: wasm_mt::WasmMt,
     th: RefCell<Option<wasm_mt::Thread>>,
+    buf: RefCell<Vec<u8>>,
 }
 
 macro_rules! th { ($self:expr) => ($self.th.borrow().as_ref().unwrap()); }
@@ -29,6 +30,7 @@ impl PlotThread {
         Self {
             mt: create_mt(clazz),
             th: RefCell::new(None),
+            buf: RefCell::new(vec![]),
         }
     }
 
@@ -80,15 +82,25 @@ impl PlotThread {
         let (width, height) = (samples.0 as u32, samples.1 as u32);
         let arr = Uint8Array::new(jsv.dyn_ref::<ArrayBuffer>().unwrap());
 
-        // TODO: Instead of `arr.to_vec()`, maybe use `arr.copy_to()`
-        //   with pre-allocated `Vec<u8>` in `self`
-        // https://rustwasm.github.io/wasm-bindgen/api/js_sys/struct.Uint8Array.html#method.copy_to
+        let buf = &mut self.buf.borrow_mut();
+        Self::copy_to_buf(&arr, buf);
         let data = ImageData::new_with_u8_clamped_array_and_sh(
-            Clamped(&mut arr.to_vec()), width, height)?.into();
+            Clamped(buf), width, height)?.into();
 
         ctx.put_image_data(&data, offset.0 as f64, offset.1 as f64)?;
 
         Ok(())
+    }
+
+    fn copy_to_buf(arr: &Uint8Array, buf: &mut Vec<u8>) {
+        let arr_len = arr.length() as usize;
+        if buf.len() != arr_len {
+            buf.resize(arr_len, 0);
+        } else {
+            // console_ln!("lengths agreed");
+        }
+        // console_ln!("buf.len(): {}", buf.len());
+        arr.copy_to(buf);
     }
 
     #[allow(dead_code)]
