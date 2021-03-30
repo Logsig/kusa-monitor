@@ -11,6 +11,6 @@
     "author": "The Kusa Developers",
     "license": "MIT",
     "devDependencies": {
-        "es-pack-js": "0.5.0"
+        "es-pack-js": "0.5.1"
     }
 }
